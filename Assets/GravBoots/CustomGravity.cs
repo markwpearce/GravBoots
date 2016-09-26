@@ -141,9 +141,10 @@ namespace GravBoots
                 //weight of each normal = 
                 // (distance of closest /this distance)^2
 
+                /*
                 Vector3 normalsWeightedTotal = Vector3.zero;
                 int surfaces = surfaceHits.Count;
-               /* if (surfaceNormal != Vector3.zero) {
+                if (surfaceNormal != Vector3.zero) {
                     //use current to weight gravity direction.
                     normalsWeightedTotal += surfaceNormal;
                     surfaces+=1;

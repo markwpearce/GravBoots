@@ -33,7 +33,8 @@ namespace GravBoots
         [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
         [SerializeField] private AudioClip m_DeadSound;           // the sound played when character dies
         [SerializeField] private AudioClip m_HealSound;           // the sound played when character dies
-        [SerializeField] private float lerpSpeed = 10; // smoothing speed
+        [SerializeField] private float rotationLerpSpeed = 10; // smoothing speed of automatic rotation
+        [SerializeField] private float angleRotationThreshold = 2; // smoothing speed
         [SerializeField] GravGun m_gun;
         [SerializeField] AudioClipCycler m_hurtSounds;
 
@@ -213,12 +214,14 @@ namespace GravBoots
                     targetRot.x, targetRot.y, targetRot.z));
 
                 transform.rotation = Quaternion.Lerp (transform.rotation, targetRot, Time.fixedDeltaTime);*/
-
-                myNormal = Vector3.Slerp(myNormal, -m_grav.GravityDirection, m_grav.gravAmount*lerpSpeed*Time.deltaTime);
-                // find forward direction with new myNormal:
+                float angleDifference = Vector3.Angle (myNormal, -m_grav.GravityDirection);
+                myNormal = Vector3.Slerp(myNormal, -m_grav.GravityDirection, m_grav.gravAmount*rotationLerp(Time.deltaTime));
+                
+                    // find forward direction with new myNormal:
                 Vector3 myForward = Vector3.Cross(transform.right, myNormal);
 
                 Debug.DrawRay (transform.position, 2f*myForward, Color.red);
+                Debug.DrawRay (transform.position, 2.5f*myNormal, Color.magenta);
 
                 // align character to the new myNormal while keeping the forward direction:
                 //if (m_gravCharacter.velocity.sqrMagnitude > 0f) {
@@ -353,23 +356,21 @@ namespace GravBoots
         }
 
 
+        private float rotationLerp(float time) {
+            float lerpSpeed = rotationLerpSpeed * time;
+            return lerpSpeed;
+        }
+
+
         private void RotateView()
         {
-            Quaternion gravRot = Quaternion.Slerp (transform.rotation, gravityRotation, lerpSpeed * Time.deltaTime);
-
-            //gravRot.SetLookRotation (transform.forward);
-            //gravRot.ToAngleAxis(out angle, out axis);
-            //Debug.Log ("Grav rotate: " + angle + " on " + axis);
-
-
+            Quaternion gravRot = Quaternion.RotateTowards (transform.rotation, gravityRotation, 30f*rotationLerp(Time.deltaTime));
+           
             Vector3 feet = transform.position- transform.up* ((m_gravCharacter.height - 0.05f) / 2f);;
 
-            //transform.RotateAround(m_grav.FeetPosition, axis, angle);
-             // transform.rotation.se 
             transform.rotation = gravRot;
 
-            transform.position = feet + transform.up * ((m_gravCharacter.height - 0.05f) / 2f);//Vector3.Lerp(transform.position, feet + transform.up*((1.8f-0.1f)/2f),  lerpSpeed * Time.deltaTime);
-
+            transform.position = feet + transform.up * ((m_gravCharacter.height - 0.05f) / 2f);
             m_MouseLook.LookRotation (transform, m_Camera.transform, m_health.isDead());
         }
 
