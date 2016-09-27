@@ -70,6 +70,8 @@ namespace GravBoots
 
         bool neverGrounded = true;
 
+        private float timeOfLastJump = 0;
+
         // Use this for initialization
         private void Start()
         {
@@ -158,43 +160,34 @@ namespace GravBoots
             GetInput(out speed);
 
             //m_MoveDir = Vector3.zero;
-            if (m_grav.isGrounded) {//m_CharacterController.isGrounded)
+            if (m_grav.isGrounded) {
                 // always move along the camera forward as it is the direction that it being aimed at
 
-                //TODO: Figure out Horizontal!
-
                 Vector3 desiredMove = Vector3.forward * m_Input.y + Vector3.right * m_Input.x;;
-                        //transform.forward*m_Input.y + transform.right*m_Input.x;
 
-                // get a normal for the surface that is being touched to move along it
-                /*RaycastHit hitInfo;
-                Physics.SphereCast(transform.position, m_gravCharacter.radius, m_grav.GravityDirection, out hitInfo,
-                    m_gravCharacter.height/2f, ~0, QueryTriggerInteraction.Ignore);
-                desiredMove = Vector3.ProjectOnPlane(desiredMove, m_grav.surfaceNormal).normalized;
-                */
                 m_MoveDir.x = desiredMove.x*speed;
                 m_MoveDir.z = desiredMove.z*speed;
-               // m_MoveDir.y = -m_StickToGroundForce;
-
-               //m_MoveDir.y = Mathf.Lerp (m_MoveDir.y, 0, Time.fixedDeltaTime);
 
 
                 neverGrounded = false;
-
-                m_Jumping = false;
                 if (m_Jump && !isDead) {
                     m_MoveDir.y = m_JumpSpeed;
                     m_gravCharacter.JumpFixedUpdate(m_JumpSpeed);
                     PlayJumpSound ();
                     m_Jump = false;
                     m_Jumping = true;
+                    timeOfLastJump = Time.time;
+                    Debug.Log ("Jumping!");
 
 
                 }
                 m_WorldMoveDir = transform.TransformDirection (m_MoveDir);
 
             }
-
+            else if (!m_Jumping && !isDead) {
+                //TODO: WHen you loose groundedness, but it wasn't from a jump, slow down world momentum!
+                m_WorldMoveDir *= 0.5f;
+            }
             m_gravCharacter.MoveFixedUpdate (m_WorldMoveDir * Time.fixedDeltaTime);
 
             if(m_grav.hasGravity)
@@ -357,14 +350,14 @@ namespace GravBoots
 
 
         private float rotationLerp(float time) {
-            float lerpSpeed = rotationLerpSpeed * time;
+            float lerpSpeed = rotationLerpSpeed * time ;
             return lerpSpeed;
         }
 
 
         private void RotateView()
         {
-            Quaternion gravRot = Quaternion.RotateTowards (transform.rotation, gravityRotation, 30f*rotationLerp(Time.deltaTime));
+            Quaternion gravRot = Quaternion.RotateTowards (transform.rotation, gravityRotation, 20f* m_grav.currentGravFraction());
            
             Vector3 feet = transform.position- transform.up* ((m_gravCharacter.height - 0.05f) / 2f);;
 
