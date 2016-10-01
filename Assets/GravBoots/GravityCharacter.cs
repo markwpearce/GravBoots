@@ -16,6 +16,11 @@ namespace GravBoots
         private CapsuleCollider m_collider;
         private Rigidbody m_rigidbody;
         private CustomGravity m_customGrav;
+
+        private float playerSpeed = 0;
+        private float lastTimeSpeedUpdate = Time.time;
+
+
         void Start()
         {
             m_collider = GetComponent<CapsuleCollider>();
@@ -70,13 +75,17 @@ namespace GravBoots
                 actualDirection = Vector3.ClampMagnitude (actualDirection, hitInfo.distance-m_collider.height);
             }
 
+            Vector3 previousPosition = transform.position;
+
 
             if (actualDirection.magnitude > 0.01f) {
                     
                 transform.Translate (actualDirection);
             }
 
-           
+            playerSpeed = (transform.position - previousPosition).sqrMagnitude / (Time.time - lastTimeSpeedUpdate);
+
+            lastTimeSpeedUpdate = Time.time;
         }
 
         public void JumpFixedUpdate(float speed) {
@@ -84,6 +93,10 @@ namespace GravBoots
                 m_rigidbody.AddForce(speed*transform.up);
                 //Debug.Log ("Jumping! " +speed);
             }
+        }
+
+        public float GetPlayerSpeed() {
+            return playerSpeed;
         }
 
         private void FixedUpdate()
