@@ -33,7 +33,8 @@ namespace GravBoots
         [SerializeField] private AudioClip m_LandSound;           // the sound played when character touches back on ground.
         [SerializeField] private AudioClip m_DeadSound;           // the sound played when character dies
         [SerializeField] private AudioClip m_HealSound;           // the sound played when character dies
-        [SerializeField] private float lerpSpeed = 10; // smoothing speed
+        [SerializeField] private float rotationLerpSpeed = 10; // smoothing speed of automatic rotation
+        [SerializeField] private float angleRotationThreshold = 2; // smoothing speed
         [SerializeField] GravGun m_gun;
         [SerializeField] AudioClipCycler m_hurtSounds;
 
@@ -68,6 +69,8 @@ namespace GravBoots
         Animator m_Animator;
 
         bool neverGrounded = true;
+
+        private float timeOfLastJump = 0;
 
         // Use this for initialization
         private void Start()
@@ -157,43 +160,34 @@ namespace GravBoots
             GetInput(out speed);
 
             //m_MoveDir = Vector3.zero;
-            if (m_grav.isGrounded) {//m_CharacterController.isGrounded)
+            if (m_grav.isGrounded) {
                 // always move along the camera forward as it is the direction that it being aimed at
 
-                //TODO: Figure out Horizontal!
-
                 Vector3 desiredMove = Vector3.forward * m_Input.y + Vector3.right * m_Input.x;;
-                        //transform.forward*m_Input.y + transform.right*m_Input.x;
 
-                // get a normal for the surface that is being touched to move along it
-                /*RaycastHit hitInfo;
-                Physics.SphereCast(transform.position, m_gravCharacter.radius, m_grav.GravityDirection, out hitInfo,
-                    m_gravCharacter.height/2f, ~0, QueryTriggerInteraction.Ignore);
-                desiredMove = Vector3.ProjectOnPlane(desiredMove, m_grav.surfaceNormal).normalized;
-                */
                 m_MoveDir.x = desiredMove.x*speed;
                 m_MoveDir.z = desiredMove.z*speed;
-               // m_MoveDir.y = -m_StickToGroundForce;
-
-               //m_MoveDir.y = Mathf.Lerp (m_MoveDir.y, 0, Time.fixedDeltaTime);
 
 
                 neverGrounded = false;
-
-                m_Jumping = false;
                 if (m_Jump && !isDead) {
                     m_MoveDir.y = m_JumpSpeed;
                     m_gravCharacter.JumpFixedUpdate(m_JumpSpeed);
                     PlayJumpSound ();
                     m_Jump = false;
                     m_Jumping = true;
+                    timeOfLastJump = Time.time;
+                    Debug.Log ("Jumping!");
 
 
                 }
                 m_WorldMoveDir = transform.TransformDirection (m_MoveDir);
 
             }
-
+            else if (!m_Jumping && !isDead) {
+                //TODO: WHen you loose groundedness, but it wasn't from a jump, slow down world momentum!
+                m_WorldMoveDir *= 0.5f;
+            }
             m_gravCharacter.MoveFixedUpdate (m_WorldMoveDir * Time.fixedDeltaTime);
 
             if(m_grav.hasGravity)
@@ -213,12 +207,14 @@ namespace GravBoots
                     targetRot.x, targetRot.y, targetRot.z));
 
                 transform.rotation = Quaternion.Lerp (transform.rotation, targetRot, Time.fixedDeltaTime);*/
-
-                myNormal = Vector3.Slerp(myNormal, -m_grav.GravityDirection, m_grav.gravAmount*lerpSpeed*Time.deltaTime);
-                // find forward direction with new myNormal:
+                float angleDifference = Vector3.Angle (myNormal, -m_grav.GravityDirection);
+                myNormal = Vector3.Slerp(myNormal, -m_grav.GravityDirection, m_grav.gravAmount*rotationLerp(Time.deltaTime));
+                
+                    // find forward direction with new myNormal:
                 Vector3 myForward = Vector3.Cross(transform.right, myNormal);
 
                 Debug.DrawRay (transform.position, 2f*myForward, Color.red);
+                Debug.DrawRay (transform.position, 2.5f*myNormal, Color.magenta);
 
                 // align character to the new myNormal while keeping the forward direction:
                 //if (m_gravCharacter.velocity.sqrMagnitude > 0f) {
@@ -353,23 +349,40 @@ namespace GravBoots
         }
 
 
+        private float rotationLerp(float time) {
+            float lerpSpeed = rotationLerpSpeed * time ;
+            return lerpSpeed;
+        }
+
+
         private void RotateView()
         {
-            Quaternion gravRot = Quaternion.Slerp (transform.rotation, gravityRotation, lerpSpeed * Time.deltaTime);
 
-            //gravRot.SetLookRotation (transform.forward);
-            //gravRot.ToAngleAxis(out angle, out axis);
-            //Debug.Log ("Grav rotate: " + angle + " on " + axis);
+            float angleNeed = Quaternion.Angle (transform.rotation, gravityRotation);
+            float speedFactor = 1;
+
+            if (angleNeed < 15f) {
+                //float speedRamp = Math.Max (0.2, m_gravCharacter.GetPlayerSpeed ());
+                speedFactor = m_gravCharacter.GetPlayerSpeed () *angleNeed/15f;
+                speedFactor = Math.Max (speedFactor, 0.2f);
+            }
+            float maxAngleToRotate = angleNeed * m_grav.currentGravFraction()*speedFactor;
+            maxAngleToRotate = Math.Max (4f, maxAngleToRotate);
+            maxAngleToRotate = Math.Min (maxAngleToRotate, 30f);
+           
 
 
+            Debug.Log ("Speed: " + m_gravCharacter.GetPlayerSpeed () +" Max Rot Angle: "+maxAngleToRotate+" angle need: "+angleNeed);
+
+
+
+            Quaternion gravRot = Quaternion.RotateTowards (transform.rotation, gravityRotation, maxAngleToRotate);
+           
             Vector3 feet = transform.position- transform.up* ((m_gravCharacter.height - 0.05f) / 2f);;
 
-            //transform.RotateAround(m_grav.FeetPosition, axis, angle);
-             // transform.rotation.se 
             transform.rotation = gravRot;
 
-            transform.position = feet + transform.up * ((m_gravCharacter.height - 0.05f) / 2f);//Vector3.Lerp(transform.position, feet + transform.up*((1.8f-0.1f)/2f),  lerpSpeed * Time.deltaTime);
-
+            transform.position = feet + transform.up * ((m_gravCharacter.height - 0.05f) / 2f);
             m_MouseLook.LookRotation (transform, m_Camera.transform, m_health.isDead());
         }
 

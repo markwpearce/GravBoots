@@ -64,6 +64,14 @@ namespace GravBoots
             return c;
         }
 
+
+        public float currentGravFraction() {
+            if (hasGravity) {
+                return gravAmount / maxAmount;
+            }
+            return 0f;
+        }
+
         public static string GetGameObjectPath(GameObject com)
         {
             GameObject obj = com.gameObject;
@@ -137,13 +145,16 @@ namespace GravBoots
             }
 
             if (found) {
+
+                surfaceNormal = closestHitInfo.normal;
                 //find weighted average of surface normals
                 //weight of each normal = 
                 // (distance of closest /this distance)^2
 
+                /*
                 Vector3 normalsWeightedTotal = Vector3.zero;
                 int surfaces = surfaceHits.Count;
-               /* if (surfaceNormal != Vector3.zero) {
+                if (surfaceNormal != Vector3.zero) {
                     //use current to weight gravity direction.
                     normalsWeightedTotal += surfaceNormal;
                     surfaces+=1;
@@ -153,9 +164,9 @@ namespace GravBoots
                     float weight = Mathf.Pow (ourClosestDistance / surfaceHit.distance, 2);
                     normalsWeightedTotal += weight * surfaceHit.normal;
                 }
-                */
 
-                surfaceNormal = closestHitInfo.normal;//normalsWeightedTotal / surfaces;
+                surfaceNormal = normalsWeightedTotal / surfaces;
+                */
             }
 
 
@@ -210,7 +221,8 @@ namespace GravBoots
             if(!hasGravity)
             {
                 if (objectCausingGravity != null ) {
-                    //Debug.Log ("Lost gravity!");
+                    Debug.Log ("Lost gravity!");
+                    //Debug.Break ();
                 }
                 objectCausingGravity = null;
             }
