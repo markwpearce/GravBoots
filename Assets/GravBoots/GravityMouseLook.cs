@@ -43,27 +43,27 @@ namespace GravBoots
             m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
             m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
 
-
-
             if((clampVerticalRotation && m_grav.isGrounded) || deadClamp)
                 m_CameraTargetRot = ClampRotationAroundXAxis (m_CameraTargetRot, deadClamp);
 
             if (deadClamp) {
                 m_CharacterTargetRot = ClampRotationAroundYAxis (m_CharacterTargetRot, deadClamp);
             }
-
+           
 
             if(smooth)
             {
-                character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
-                    smoothTime * Time.deltaTime);
                 camera.localRotation = Quaternion.Slerp (camera.localRotation, m_CameraTargetRot,
                     smoothTime * Time.deltaTime);
+                character.localRotation = Quaternion.Slerp (character.localRotation, m_CharacterTargetRot,
+                    smoothTime * Time.deltaTime);
+            
             }
             else
             {
-                character.localRotation = m_CharacterTargetRot;
                 camera.localRotation = m_CameraTargetRot;
+                character.localRotation = m_CharacterTargetRot;
+
             }
 
             UpdateCursorLock();

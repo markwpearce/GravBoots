@@ -355,6 +355,7 @@ namespace GravBoots
         }
 
 
+
         private void RotateView()
         {
 
@@ -362,19 +363,15 @@ namespace GravBoots
             float speedFactor = 1;
 
             if (angleNeed < 15f) {
-                //float speedRamp = Math.Max (0.2, m_gravCharacter.GetPlayerSpeed ());
                 speedFactor = m_gravCharacter.GetPlayerSpeed () *angleNeed/15f;
                 speedFactor = Math.Max (speedFactor, 0.2f);
             }
             float maxAngleToRotate = angleNeed * m_grav.currentGravFraction()*speedFactor;
             maxAngleToRotate = Math.Max (4f, maxAngleToRotate);
-            maxAngleToRotate = Math.Min (maxAngleToRotate, 30f);
-           
-
-
+            maxAngleToRotate = Math.Min (maxAngleToRotate, 15f);
+         
             Debug.Log ("Speed: " + m_gravCharacter.GetPlayerSpeed () +" Max Rot Angle: "+maxAngleToRotate+" angle need: "+angleNeed);
-
-
+           
 
             Quaternion gravRot = Quaternion.RotateTowards (transform.rotation, gravityRotation, maxAngleToRotate);
            
